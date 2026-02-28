@@ -1,0 +1,1859 @@
+{
+  "system_overview": "PaperTestChecker is a full-stack system for automated grading of student test submissions (from photos or typed answers). Architecture: React 18 + Vite frontend serves a Single Page Application (SPA) with role-based views (Admin/Teacher/Student). ASP.NET 8 backend provides REST APIs for auth (JWT), test management, OCR processing (Tesseract.NET), submission grading (rule-based + LLM-assisted feedback), and resource recommendations. PostgreSQL stores users, tests, questions, submissions, results, and resources. Qdrant vector database enables semantic search for resource recommendations by embedding error descriptions and comparing with indexed reading materials. Python microservice (optional, local or via Hugging Face) handles embedding generation. All services run in Docker containers for local dev. Data flow: Student uploads photo -> OCR pipeline extracts answers -> stored submission -> grading engine compares with key and generates feedback with error tags -> RecommendationService queries Qdrant for top 3 resources -> Results displayed in frontend. Auth enforced via JWT middleware; role-based access controls restrict admin/teacher endpoints.",
+  "tech_choices": [
+    {
+      "category": "Backend",
+      "name": ".NET 8",
+      "version": "8.0",
+      "rationale": "Latest LTS, built-in dependency injection, async/await native, strong ORM ecosystem (EF Core)"
+    },
+    {
+      "category": "Backend Framework",
+      "name": "ASP.NET Core",
+      "version": "8.0",
+      "rationale": "RESTful API development, middleware pipeline, integrated logging and configuration"
+    },
+    {
+      "category": "Backend ORM",
+      "name": "Entity Framework Core",
+      "version": "8.0",
+      "rationale": "Database migrations, LINQ queries, schema management"
+    },
+    {
+      "category": "Backend Auth",
+      "name": "JWT (System.IdentityModel.Tokens.Jwt)",
+      "version": "latest",
+      "rationale": "Stateless, mobile/SPA-friendly, industry standard"
+    },
+    {
+      "category": "Backend OCR",
+      "name": "Tesseract.NET (Emgu.CV or Emgu.Tesseract)",
+      "version": "latest",
+      "rationale": "Open-source, free, local processing, no API keys required"
+    },
+    {
+      "category": "Backend Validation",
+      "name": "FluentValidation",
+      "version": "latest",
+      "rationale": "Fluent API for model validation, reusable rules"
+    },
+    {
+      "category": "Database",
+      "name": "PostgreSQL",
+      "version": "15+",
+      "rationale": "Relational, JSONB support for flexible schema, free, production-ready"
+    },
+    {
+      "category": "Vector Database",
+      "name": "Qdrant",
+      "version": "1.7+",
+      "rationale": "Fast vector similarity search, Docker-ready, no external dependency, supports cosine/dot product similarity"
+    },
+    {
+      "category": "Embedding Service",
+      "name": "sentence-transformers (Python) or Hugging Face Inference API",
+      "version": "latest or free tier",
+      "rationale": "sentence-transformers runs locally (CPU) for dev; Hugging Face for production scale without GPU cost"
+    },
+    {
+      "category": "Frontend Framework",
+      "name": "React",
+      "version": "18.x",
+      "rationale": "Component-driven, SPA-friendly, large ecosystem"
+    },
+    {
+      "category": "Frontend Build Tool",
+      "name": "Vite",
+      "version": "5.x",
+      "rationale": "Fast dev server, instant HMR, optimized production builds, modern ES module support"
+    },
+    {
+      "category": "Frontend Language",
+      "name": "TypeScript",
+      "version": "5.x",
+      "rationale": "Type safety, better IDE support, catch errors early"
+    },
+    {
+      "category": "Frontend Routing",
+      "name": "React Router",
+      "version": "6.x",
+      "rationale": "Client-side routing, lazy code splitting, nested routes support"
+    },
+    {
+      "category": "Frontend HTTP Client",
+      "name": "Axios",
+      "version": "latest",
+      "rationale": "Promise-based, request/response interceptors for auth, automatic JSON serialization"
+    },
+    {
+      "category": "Frontend UI Components",
+      "name": "shadcn/ui or Headless UI",
+      "version": "latest",
+      "rationale": "Accessible, unstyled/styled components, Tailwind CSS compatible"
+    },
+    {
+      "category": "Frontend Styling",
+      "name": "Tailwind CSS",
+      "version": "3.x",
+      "rationale": "Utility-first, rapid prototyping, minimal CSS bundle"
+    },
+    {
+      "category": "Frontend Charts",
+      "name": "Recharts",
+      "version": "2.x",
+      "rationale": "Lightweight, React-friendly, adequate for basic analytics"
+    },
+    {
+      "category": "Frontend Testing",
+      "name": "Vitest + React Testing Library",
+      "version": "latest",
+      "rationale": "Jest-compatible, fast unit tests, integration testing for components"
+    },
+    {
+      "category": "Frontend E2E Testing",
+      "name": "Playwright",
+      "version": "1.40+",
+      "rationale": "Cross-browser, stable, supports headless and debug modes"
+    },
+    {
+      "category": "Container Runtime",
+      "name": "Docker",
+      "version": "24+",
+      "rationale": "Industry standard, reproducible environments"
+    },
+    {
+      "category": "Container Orchestration (Dev)",
+      "name": "Docker Compose",
+      "version": "2.20+",
+      "rationale": "Local multi-container dev environment, declarative YAML"
+    },
+    {
+      "category": "CI/CD",
+      "name": "GitHub Actions",
+      "version": "latest",
+      "rationale": "Free for public repos, integrated with GitHub, no setup cost"
+    }
+  ],
+  "repo_layout": {
+    "structure": [
+      {
+        "path": ".",
+        "type": "root",
+        "description": "Project root; contains docker-compose.yml, .gitignore, README.md"
+      },
+      {
+        "path": "backend/",
+        "type": "folder",
+        "description": "ASP.NET 8 backend"
+      },
+      {
+        "path": "backend/PaperTestChecker.sln",
+        "type": "file",
+        "description": "Solution file for .NET project"
+      },
+      {
+        "path": "backend/PaperTestChecker.csproj",
+        "type": "file",
+        "description": "Main backend project file with NuGet dependencies"
+      },
+      {
+        "path": "backend/Program.cs",
+        "type": "file",
+        "description": "ASP.NET Core host builder, middleware, DI configuration"
+      },
+      {
+        "path": "backend/appsettings.json",
+        "type": "file",
+        "description": "Production config (DB connection, Qdrant URL, JWT secret placeholder)"
+      },
+      {
+        "path": "backend/appsettings.Development.json",
+        "type": "file",
+        "description": "Dev config with local Postgres/Qdrant endpoints"
+      },
+      {
+        "path": "backend/Models/",
+        "type": "folder",
+        "description": "EF Core entity models (User, Test, Question, StudentSubmission, Result, Resource, Embedding)"
+      },
+      {
+        "path": "backend/Models/DbContext.cs",
+        "type": "file",
+        "description": "PaperTestCheckerContext: DbSet definitions, OnModelCreating fluent config"
+      },
+      {
+        "path": "backend/Controllers/",
+        "type": "folder",
+        "description": "ASP.NET Core API controllers"
+      },
+      {
+        "path": "backend/Controllers/AuthController.cs",
+        "type": "file",
+        "description": "POST /api/auth/register, POST /api/auth/login, GET /api/auth/me"
+      },
+      {
+        "path": "backend/Controllers/TestsController.cs",
+        "type": "file",
+        "description": "CRUD for tests, GET /api/tests, POST /api/tests, GET /api/tests/{id}, PUT /api/tests/{id}, DELETE /api/tests/{id}"
+      },
+      {
+        "path": "backend/Controllers/OcrController.cs",
+        "type": "file",
+        "description": "POST /api/ocr/upload (image), POST /api/ocr/parse (structured OCR output)"
+      },
+      {
+        "path": "backend/Controllers/SubmissionsController.cs",
+        "type": "file",
+        "description": "POST /api/submissions, GET /api/submissions/{id}/result, PUT /api/submissions/{id}/regrade"
+      },
+      {
+        "path": "backend/Controllers/GradingController.cs",
+        "type": "file",
+        "description": "POST /api/tests/{id}/grade (main grading endpoint), returns per-question results with feedback"
+      },
+      {
+        "path": "backend/Controllers/ResourcesController.cs",
+        "type": "file",
+        "description": "POST /api/resources/ingest, GET /api/resources, resource CRUD"
+      },
+      {
+        "path": "backend/Controllers/RecommendationsController.cs",
+        "type": "file",
+        "description": "POST /api/recommendations (query vector DB for resources)"
+      },
+      {
+        "path": "backend/Controllers/AnalyticsController.cs",
+        "type": "file",
+        "description": "GET /api/tests/{id}/analytics (score distribution, per-question stats)"
+      },
+      {
+        "path": "backend/Services/",
+        "type": "folder",
+        "description": "Business logic services"
+      },
+      {
+        "path": "backend/Services/AuthService.cs",
+        "type": "file",
+        "description": "User registration, password hashing (bcrypt), JWT generation"
+      },
+      {
+        "path": "backend/Services/OcrService.cs",
+        "type": "file",
+        "description": "Tesseract integration, image validation, OCR text extraction"
+      },
+      {
+        "path": "backend/Services/GradingService.cs",
+        "type": "file",
+        "description": "Compares student answers with key, generates score and error tags, calls RecommendationService"
+      },
+      {
+        "path": "backend/Services/EmbeddingService.cs",
+        "type": "file",
+        "description": "HTTP client to embedding microservice (local or Hugging Face), returns vectors"
+      },
+      {
+        "path": "backend/Services/QdrantService.cs",
+        "type": "file",
+        "description": "HTTP client to Qdrant, upsert vectors, search by similarity"
+      },
+      {
+        "path": "backend/Services/RecommendationService.cs",
+        "type": "file",
+        "description": "Takes error tag/text, embeds it, queries Qdrant, returns top 3 resources"
+      },
+      {
+        "path": "backend/Services/AnalyticsService.cs",
+        "type": "file",
+        "description": "Computes score distribution, question accuracy, per-test stats"
+      },
+      {
+        "path": "backend/Middleware/",
+        "type": "folder",
+        "description": "Custom middleware"
+      },
+      {
+        "path": "backend/Middleware/JwtMiddleware.cs",
+        "type": "file",
+        "description": "Extracts JWT from Authorization header, validates, sets HttpContext.User"
+      },
+      {
+        "path": "backend/Middleware/ExceptionHandlingMiddleware.cs",
+        "type": "file",
+        "description": "Global exception handler, returns 500 with error details"
+      },
+      {
+        "path": "backend/Migrations/",
+        "type": "folder",
+        "description": "EF Core migration files (auto-generated by dotnet ef)"
+      },
+      {
+        "path": "backend/Tests/",
+        "type": "folder",
+        "description": "Unit tests (xUnit)"
+      },
+      {
+        "path": "backend/Tests/GradingServiceTests.cs",
+        "type": "file",
+        "description": "Unit tests for grading logic"
+      },
+      {
+        "path": "backend/Tests/AuthServiceTests.cs",
+        "type": "file",
+        "description": "Unit tests for auth (registration, login, JWT validation)"
+      },
+      {
+        "path": "backend/Dockerfile",
+        "type": "file",
+        "description": "Multi-stage build: restore deps, build, publish, runtime image"
+      },
+      {
+        "path": "backend/.dockerignore",
+        "type": "file",
+        "description": "Exclude bin, obj, .git, etc. from Docker context"
+      },
+      {
+        "path": "frontend/",
+        "type": "folder",
+        "description": "React + Vite + TypeScript frontend"
+      },
+      {
+        "path": "frontend/package.json",
+        "type": "file",
+        "description": "Node dependencies, scripts (dev, build, preview, test, e2e)"
+      },
+      {
+        "path": "frontend/vite.config.ts",
+        "type": "file",
+        "description": "Vite config with React plugin, proxy to backend API on localhost:5000"
+      },
+      {
+        "path": "frontend/tsconfig.json",
+        "type": "file",
+        "description": "TypeScript strict mode, lib ES2020, JSX react-jsx"
+      },
+      {
+        "path": "frontend/src/",
+        "type": "folder",
+        "description": "Application source code"
+      },
+      {
+        "path": "frontend/src/main.tsx",
+        "type": "file",
+        "description": "React app entry point, mount to #root"
+      },
+      {
+        "path": "frontend/src/App.tsx",
+        "type": "file",
+        "description": "Top-level component with Router, layout logic"
+      },
+      {
+        "path": "frontend/src/index.css",
+        "type": "file",
+        "description": "Global styles, Tailwind imports"
+      },
+      {
+        "path": "frontend/src/api/",
+        "type": "folder",
+        "description": "API client functions"
+      },
+      {
+        "path": "frontend/src/api/client.ts",
+        "type": "file",
+        "description": "Axios instance with interceptors for JWT, base URL, error handling"
+      },
+      {
+        "path": "frontend/src/api/auth.ts",
+        "type": "file",
+        "description": "register(email, password), login(email, password), getCurrentUser()"
+      },
+      {
+        "path": "frontend/src/api/tests.ts",
+        "type": "file",
+        "description": "getTests(), getTest(id), createTest(payload), updateTest(id, payload), deleteTest(id)"
+      },
+      {
+        "path": "frontend/src/api/ocr.ts",
+        "type": "file",
+        "description": "uploadImage(file), parseOcr(rawText)"
+      },
+      {
+        "path": "frontend/src/api/submissions.ts",
+        "type": "file",
+        "description": "submitAnswers(testId, answers), getSubmissionResult(submissionId), regrade(submissionId, changes)"
+      },
+      {
+        "path": "frontend/src/api/grading.ts",
+        "type": "file",
+        "description": "gradeSubmission(testId, answers)"
+      },
+      {
+        "path": "frontend/src/api/resources.ts",
+        "type": "file",
+        "description": "ingestResources(file), getResources(), getRecommendations(errorTag)"
+      },
+      {
+        "path": "frontend/src/api/analytics.ts",
+        "type": "file",
+        "description": "getTestAnalytics(testId)"
+      },
+      {
+        "path": "frontend/src/components/",
+        "type": "folder",
+        "description": "Reusable UI components"
+      },
+      {
+        "path": "frontend/src/components/Header.tsx",
+        "type": "file",
+        "description": "App header with navigation, user menu, logout"
+      },
+      {
+        "path": "frontend/src/components/MainLayout.tsx",
+        "type": "file",
+        "description": "Layout for public/student views (Header, main content area, Footer)"
+      },
+      {
+        "path": "frontend/src/components/AdminLayout.tsx",
+        "type": "file",
+        "description": "Layout for admin/teacher (Sidebar, main content area)"
+      },
+      {
+        "path": "frontend/src/components/QuestionCard.tsx",
+        "type": "file",
+        "description": "Display single question with answer input (text/MC)"
+      },
+      {
+        "path": "frontend/src/components/FeedbackCard.tsx",
+        "type": "file",
+        "description": "Display per-question feedback, correct answer, links to recommended resources"
+      },
+      {
+        "path": "frontend/src/components/TestForm.tsx",
+        "type": "file",
+        "description": "Form to create/edit test (title, questions, answer key)"
+      },
+      {
+        "path": "frontend/src/components/OcrPreview.tsx",
+        "type": "file",
+        "description": "Display OCR output, allow user to correct extracted text"
+      },
+      {
+        "path": "frontend/src/components/ResourceLink.tsx",
+        "type": "file",
+        "description": "Display recommended resource as link with title, URL, snippet"
+      },
+      {
+        "path": "frontend/src/pages/",
+        "type": "folder",
+        "description": "Page components (route handlers)"
+      },
+      {
+        "path": "frontend/src/pages/LoginPage.tsx",
+        "type": "file",
+        "description": "Login form, auth state management"
+      },
+      {
+        "path": "frontend/src/pages/RegisterPage.tsx",
+        "type": "file",
+        "description": "Registration form, validation, role selection"
+      },
+      {
+        "path": "frontend/src/pages/TestListPage.tsx",
+        "type": "file",
+        "description": "List of tests, filter by role (student sees assigned, teacher sees created)"
+      },
+      {
+        "path": "frontend/src/pages/TestViewPage.tsx",
+        "type": "file",
+        "description": "Main test-taking page: upload image, OCR preview, edit answers, grade button, display results"
+      },
+      {
+        "path": "frontend/src/pages/ResultsPage.tsx",
+        "type": "file",
+        "description": "Display grading results, per-question feedback, resource recommendations"
+      },
+      {
+        "path": "frontend/src/pages/AdminPanel.tsx",
+        "type": "file",
+        "description": "Admin dashboard (resource upload, test management, user list)"
+      },
+      {
+        "path": "frontend/src/pages/AnalyticsPage.tsx",
+        "type": "file",
+        "description": "Test analytics (score histogram, per-question accuracy, class stats)"
+      },
+      {
+        "path": "frontend/src/hooks/",
+        "type": "folder",
+        "description": "Custom React hooks"
+      },
+      {
+        "path": "frontend/src/hooks/useAuth.ts",
+        "type": "file",
+        "description": "Auth state management (login, logout, getCurrentUser, role check)"
+      },
+      {
+        "path": "frontend/src/hooks/useApi.ts",
+        "type": "file",
+        "description": "Generic hook for async API calls (loading, error, data states)"
+      },
+      {
+        "path": "frontend/src/types/",
+        "type": "folder",
+        "description": "TypeScript type definitions"
+      },
+      {
+        "path": "frontend/src/types/index.ts",
+        "type": "file",
+        "description": "Shared types: User, Test, Question, StudentSubmission, Result, Resource, etc."
+      },
+      {
+        "path": "frontend/src/utils/",
+        "type": "folder",
+        "description": "Utility functions"
+      },
+      {
+        "path": "frontend/src/utils/jwt.ts",
+        "type": "file",
+        "description": "JWT decode/parse, get role from token"
+      },
+      {
+        "path": "frontend/src/utils/validators.ts",
+        "type": "file",
+        "description": "Email regex, password strength, test payload validation"
+      },
+      {
+        "path": "frontend/tests/",
+        "type": "folder",
+        "description": "Unit and E2E tests"
+      },
+      {
+        "path": "frontend/tests/unit/",
+        "type": "folder",
+        "description": "Unit tests (Vitest + React Testing Library)"
+      },
+      {
+        "path": "frontend/tests/unit/components/QuestionCard.test.tsx",
+        "type": "file",
+        "description": "Tests for QuestionCard component rendering and input handling"
+      },
+      {
+        "path": "frontend/tests/e2e/",
+        "type": "folder",
+        "description": "End-to-end tests (Playwright)"
+      },
+      {
+        "path": "frontend/tests/e2e/grade-flow.spec.ts",
+        "type": "file",
+        "description": "E2E test: login -> upload test -> OCR -> grade -> view results"
+      },
+      {
+        "path": "frontend/Dockerfile",
+        "type": "file",
+        "description": "Build stage: npm install, npm build; production stage: nginx serving dist/ with SPA routing"
+      },
+      {
+        "path": "frontend/.dockerignore",
+        "type": "file",
+        "description": "Exclude node_modules, dist, .git"
+      },
+      {
+        "path": "embedding-service/",
+        "type": "folder",
+        "description": "Optional Python embedding service (for local dev)"
+      },
+      {
+        "path": "embedding-service/requirements.txt",
+        "type": "file",
+        "description": "Flask, sentence-transformers, numpy"
+      },
+      {
+        "path": "embedding-service/app.py",
+        "type": "file",
+        "description": "Flask app with POST /embed endpoint, returns 384-dim vectors for input text"
+      },
+      {
+        "path": "embedding-service/Dockerfile",
+        "type": "file",
+        "description": "Python 3.11 slim, installs deps, runs Flask on :5001"
+      },
+      {
+        "path": "docker-compose.yml",
+        "type": "file",
+        "description": "Orchestrates backend (5000), frontend dev server (3000), postgres (5432), qdrant (6333), embedding service (5001)"
+      },
+      {
+        "path": "README.md",
+        "type": "file",
+        "description": "Project overview, local dev setup, docker-compose run steps, embedding model options, architecture diagram"
+      },
+      {
+        "path": ".github/workflows/",
+        "type": "folder",
+        "description": "GitHub Actions CI/CD"
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "type": "file",
+        "description": "On push: dotnet build/test, npm build/test, E2E tests on staging backend"
+      },
+      {
+        "path": ".gitignore",
+        "type": "file",
+        "description": "Ignore bin/, obj/, node_modules/, dist/, .env, .vscode/"
+      }
+    ]
+  },
+  "openapi_skeleton": {
+    "info": {
+      "title": "PaperTestChecker API",
+      "version": "1.0.0",
+      "description": "REST API for test management, OCR, grading, and recommendations"
+    },
+    "servers": [
+      {
+        "url": "http://localhost:5000/api",
+        "description": "Local development"
+      }
+    ],
+    "paths": {
+      "/auth/register": {
+        "post": {
+          "summary": "Register a new user",
+          "tags": ["Auth"],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {"type": "string", "format": "email"},
+                    "password": {"type": "string", "minLength": 8},
+                    "name": {"type": "string"},
+                    "role": {"type": "string", "enum": ["admin", "teacher", "student"]}
+                  },
+                  "required": ["email", "password", "name", "role"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "User created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "format": "uuid"},
+                      "email": {"type": "string"},
+                      "name": {"type": "string"},
+                      "role": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            },
+            "400": {"description": "Validation error or user exists"}
+          }
+        }
+      },
+      "/auth/login": {
+        "post": {
+          "summary": "Login and get JWT",
+          "tags": ["Auth"],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {"type": "string", "format": "email"},
+                    "password": {"type": "string"}
+                  },
+                  "required": ["email", "password"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Login successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "token": {"type": "string", "description": "JWT token"},
+                      "user": {
+                        "type": "object",
+                        "properties": {
+                          "id": {"type": "string", "format": "uuid"},
+                          "email": {"type": "string"},
+                          "name": {"type": "string"},
+                          "role": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "401": {"description": "Invalid credentials"}
+          }
+        }
+      },
+      "/auth/me": {
+        "get": {
+          "summary": "Get current user (requires auth)",
+          "tags": ["Auth"],
+          "security": [{"Bearer": []}],
+          "responses": {
+            "200": {
+              "description": "Current user",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "format": "uuid"},
+                      "email": {"type": "string"},
+                      "name": {"type": "string"},
+                      "role": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            },
+            "401": {"description": "Not authenticated"}
+          }
+        }
+      },
+      "/tests": {
+        "get": {
+          "summary": "List tests (filter by role)",
+          "tags": ["Tests"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "createdBy", "in": "query", "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "responses": {
+            "200": {
+              "description": "List of tests",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "string", "format": "uuid"},
+                        "title": {"type": "string"},
+                        "description": {"type": "string"},
+                        "createdBy": {"type": "string", "format": "uuid"},
+                        "createdAt": {"type": "string", "format": "date-time"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Create test (Teacher/Admin)",
+          "tags": ["Tests"],
+          "security": [{"Bearer": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "questions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "text": {"type": "string"},
+                          "type": {"type": "string", "enum": ["mc", "short", "long"]},
+                          "options": {"type": "array", "items": {"type": "string"}},
+                          "correctAnswer": {"type": "string"},
+                          "tags": {"type": "array", "items": {"type": "string"}}
+                        },
+                        "required": ["text", "type", "correctAnswer"]
+                      }
+                    }
+                  },
+                  "required": ["title", "questions"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Test created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "format": "uuid"},
+                      "title": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            },
+            "400": {"description": "Validation error"},
+            "403": {"description": "Insufficient permissions"}
+          }
+        }
+      },
+      "/tests/{id}": {
+        "get": {
+          "summary": "Get test details",
+          "tags": ["Tests"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "responses": {
+            "200": {
+              "description": "Test with questions and answer key (if authorized)",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "format": "uuid"},
+                      "title": {"type": "string"},
+                      "questions": {"type": "array"}
+                    }
+                  }
+                }
+              }
+            },
+            "404": {"description": "Not found"}
+          }
+        },
+        "put": {
+          "summary": "Update test (Teacher/Admin)",
+          "tags": ["Tests"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {"type": "string"},
+                    "questions": {"type": "array"}
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {"description": "Test updated"},
+            "403": {"description": "Not authorized"}
+          }
+        },
+        "delete": {
+          "summary": "Delete test (Admin)",
+          "tags": ["Tests"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "responses": {
+            "204": {"description": "Test deleted"},
+            "403": {"description": "Insufficient permissions"}
+          }
+        }
+      },
+      "/ocr/upload": {
+        "post": {
+          "summary": "Upload photo for OCR",
+          "tags": ["OCR"],
+          "security": [{"Bearer": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "file": {"type": "string", "format": "binary", "description": "Image file (jpg/png, max 8MB)"}
+                  },
+                  "required": ["file"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OCR processed",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "jobId": {"type": "string", "format": "uuid"},
+                      "rawText": {"type": "string"},
+                      "confidence": {"type": "number"}
+                    }
+                  }
+                }
+              }
+            },
+            "422": {"description": "Unreadable image"}
+          }
+        }
+      },
+      "/ocr/parse": {
+        "post": {
+          "summary": "Parse OCR output into structured answers",
+          "tags": ["OCR"],
+          "security": [{"Bearer": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jobId": {"type": "string", "format": "uuid"},
+                    "testId": {"type": "string", "format": "uuid"},
+                    "rawText": {"type": "string"}
+                  },
+                  "required": ["testId", "rawText"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Structured answers",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "answers": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "questionId": {"type": "string", "format": "uuid"},
+                            "answerText": {"type": "string"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/submissions": {
+        "post": {
+          "summary": "Submit answers for grading",
+          "tags": ["Submissions"],
+          "security": [{"Bearer": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "testId": {"type": "string", "format": "uuid"},
+                    "answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "questionId": {"type": "string", "format": "uuid"},
+                          "answerText": {"type": "string"}
+                        }
+                      }
+                    },
+                    "source": {"type": "string", "enum": ["ocr", "typed"]}
+                  },
+                  "required": ["testId", "answers", "source"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Submission created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "format": "uuid"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/submissions/{id}/result": {
+        "get": {
+          "summary": "Get grading result",
+          "tags": ["Submissions"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "responses": {
+            "200": {
+              "description": "Grading result with per-question feedback",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "format": "uuid"},
+                      "totalScore": {"type": "number"},
+                      "perQuestionResults": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "questionId": {"type": "string", "format": "uuid"},
+                            "correct": {"type": "boolean"},
+                            "score": {"type": "number"},
+                            "feedback": {"type": "string"},
+                            "errorTag": {"type": "string"},
+                            "recommendedResourceIds": {"type": "array", "items": {"type": "string", "format": "uuid"}}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/submissions/{id}/regrade": {
+        "put": {
+          "summary": "Teacher override and re-grade submission",
+          "tags": ["Submissions"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "perQuestionAdjustments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "questionId": {"type": "string", "format": "uuid"},
+                          "scoreOverride": {"type": "number"},
+                          "feedbackOverride": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Result re-graded",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "newTotalScore": {"type": "number"}
+                    }
+                  }
+                }
+              }
+            },
+            "403": {"description": "Insufficient permissions"}
+          }
+        }
+      },
+      "/tests/{id}/grade": {
+        "post": {
+          "summary": "Grade a submission (main grading endpoint)",
+          "tags": ["Grading"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "questionId": {"type": "string", "format": "uuid"},
+                          "answerText": {"type": "string"}
+                        }
+                      }
+                    }
+                  },
+                  "required": ["answers"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Grading complete",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "totalScore": {"type": "number"},
+                      "perQuestionResults": {"type": "array"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/resources/ingest": {
+        "post": {
+          "summary": "Ingest reading materials and generate embeddings (Admin)",
+          "tags": ["Resources"],
+          "security": [{"Bearer": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {"type": "string"},
+                          "url": {"type": "string", "format": "uri"},
+                          "body": {"type": "string"},
+                          "tags": {"type": "array", "items": {"type": "string"}}
+                        },
+                        "required": ["title", "url", "body"]
+                      }
+                    }
+                  },
+                  "required": ["resources"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Ingestion complete",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "itemsIndexed": {"type": "integer"},
+                      "errors": {"type": "array"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/resources": {
+        "get": {
+          "summary": "List resources",
+          "tags": ["Resources"],
+          "security": [{"Bearer": []}],
+          "responses": {
+            "200": {
+              "description": "List of resources",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "string", "format": "uuid"},
+                        "title": {"type": "string"},
+                        "url": {"type": "string", "format": "uri"},
+                        "tags": {"type": "array", "items": {"type": "string"}}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/recommendations": {
+        "post": {
+          "summary": "Get top resource recommendations for an error",
+          "tags": ["Recommendations"],
+          "security": [{"Bearer": []}],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorTag": {"type": "string", "description": "Error category or short description"},
+                    "context": {"type": "string", "description": "Optional context (question text or feedback)"}
+                  },
+                  "required": ["errorTag"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Top recommendations",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "recommendations": {
+                        "type": "array",
+                        "maxItems": 3,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "string", "format": "uuid"},
+                            "title": {"type": "string"},
+                            "url": {"type": "string", "format": "uri"},
+                            "snippet": {"type": "string"},
+                            "similarity": {"type": "number"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/tests/{id}/analytics": {
+        "get": {
+          "summary": "Get test analytics (Teacher/Admin)",
+          "tags": ["Analytics"],
+          "security": [{"Bearer": []}],
+          "parameters": [
+            {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+          ],
+          "responses": {
+            "200": {
+              "description": "Analytics data",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "testId": {"type": "string", "format": "uuid"},
+                      "submissionCount": {"type": "integer"},
+                      "averageScore": {"type": "number"},
+                      "scoreDistribution": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "bin": {"type": "string"},
+                            "count": {"type": "integer"}
+                          }
+                        }
+                      },
+                      "perQuestionStats": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "questionId": {"type": "string", "format": "uuid"},
+                            "percentCorrect": {"type": "number"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "db_schema": {
+    "tables": [
+      {
+        "name": "Users",
+        "description": "Application users with role-based access",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "Email", "type": "VARCHAR(255) NOT NULL UNIQUE"},
+          {"name": "Name", "type": "VARCHAR(255) NOT NULL"},
+          {"name": "PasswordHash", "type": "VARCHAR(255) NOT NULL"},
+          {"name": "Role", "type": "VARCHAR(50) NOT NULL CHECK (Role IN ('admin', 'teacher', 'student'))"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"},
+          {"name": "UpdatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "Tests",
+        "description": "Test templates created by teachers/admins",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "Title", "type": "VARCHAR(255) NOT NULL"},
+          {"name": "Description", "type": "TEXT"},
+          {"name": "CreatedByUserId", "type": "UUID NOT NULL REFERENCES Users(Id) ON DELETE CASCADE"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"},
+          {"name": "UpdatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "Questions",
+        "description": "Individual test questions",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "TestId", "type": "UUID NOT NULL REFERENCES Tests(Id) ON DELETE CASCADE"},
+          {"name": "QuestionIndex", "type": "INTEGER NOT NULL"},
+          {"name": "Text", "type": "TEXT NOT NULL"},
+          {"name": "QuestionType", "type": "VARCHAR(50) NOT NULL CHECK (QuestionType IN ('mc', 'short', 'long'))"},
+          {"name": "Options", "type": "JSONB", "description": "Array of choices for MC questions"},
+          {"name": "CorrectAnswer", "type": "TEXT NOT NULL"},
+          {"name": "Tags", "type": "JSONB DEFAULT '[]'::jsonb", "description": "Error category tags for recommendations"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "StudentSubmissions",
+        "description": "Student submissions for grading",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "TestId", "type": "UUID NOT NULL REFERENCES Tests(Id) ON DELETE CASCADE"},
+          {"name": "UserId", "type": "UUID NOT NULL REFERENCES Users(Id) ON DELETE CASCADE"},
+          {"name": "Source", "type": "VARCHAR(50) NOT NULL CHECK (Source IN ('ocr', 'typed'))"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "StudentAnswers",
+        "description": "Individual student answers within a submission",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "SubmissionId", "type": "UUID NOT NULL REFERENCES StudentSubmissions(Id) ON DELETE CASCADE"},
+          {"name": "QuestionId", "type": "UUID NOT NULL REFERENCES Questions(Id) ON DELETE CASCADE"},
+          {"name": "AnswerText", "type": "TEXT NOT NULL"},
+          {"name": "AnswerMetadata", "type": "JSONB", "description": "Flexible field for answer-specific data"}
+        ]
+      },
+      {
+        "name": "Results",
+        "description": "Grading results for submissions",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "SubmissionId", "type": "UUID NOT NULL UNIQUE REFERENCES StudentSubmissions(Id) ON DELETE CASCADE"},
+          {"name": "TotalScore", "type": "NUMERIC(5,2) NOT NULL"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"},
+          {"name": "UpdatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "PerQuestionResults",
+        "description": "Per-question grading details",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "ResultId", "type": "UUID NOT NULL REFERENCES Results(Id) ON DELETE CASCADE"},
+          {"name": "QuestionId", "type": "UUID NOT NULL REFERENCES Questions(Id) ON DELETE CASCADE"},
+          {"name": "IsCorrect", "type": "BOOLEAN NOT NULL"},
+          {"name": "ScoreGiven", "type": "NUMERIC(5,2) NOT NULL"},
+          {"name": "FeedbackText", "type": "TEXT"},
+          {"name": "ErrorTag", "type": "VARCHAR(255)"},
+          {"name": "RecommendedResourceIds", "type": "JSONB DEFAULT '[]'::jsonb", "description": "Array of resource UUIDs"}
+        ]
+      },
+      {
+        "name": "Resources",
+        "description": "Reading materials for recommendations",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "Title", "type": "VARCHAR(255) NOT NULL"},
+          {"name": "Url", "type": "VARCHAR(512) NOT NULL"},
+          {"name": "Body", "type": "TEXT NOT NULL"},
+          {"name": "Tags", "type": "JSONB DEFAULT '[]'::jsonb", "description": "Resource categories/keywords"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "Embeddings",
+        "description": "Vector embeddings for resources (for semantic search)",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "ResourceId", "type": "UUID NOT NULL UNIQUE REFERENCES Resources(Id) ON DELETE CASCADE"},
+          {"name": "Vector", "type": "vector(384)", "description": "384-dim embedding (from sentence-transformers)"},
+          {"name": "Model", "type": "VARCHAR(255) NOT NULL", "description": "E.g., 'all-MiniLM-L6-v2'"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "OcrJobs",
+        "description": "OCR processing history",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "UserId", "type": "UUID NOT NULL REFERENCES Users(Id) ON DELETE CASCADE"},
+          {"name": "ImageUrl", "type": "VARCHAR(512)"},
+          {"name": "RawText", "type": "TEXT"},
+          {"name": "StructuredAnswers", "type": "JSONB", "description": "Parsed answers by question"},
+          {"name": "Status", "type": "VARCHAR(50) NOT NULL CHECK (Status IN ('pending', 'completed', 'failed'))",
+            "default": "'pending'"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      },
+      {
+        "name": "AuditLog",
+        "description": "Track changes to submissions (re-grades, manual overrides)",
+        "columns": [
+          {"name": "Id", "type": "UUID PRIMARY KEY DEFAULT gen_random_uuid()"},
+          {"name": "SubmissionId", "type": "UUID NOT NULL REFERENCES StudentSubmissions(Id) ON DELETE CASCADE"},
+          {"name": "UserId", "type": "UUID NOT NULL REFERENCES Users(Id) ON DELETE SET NULL"},
+          {"name": "Action", "type": "VARCHAR(255) NOT NULL", "description": "E.g., 'regrade', 'override'"},
+          {"name": "Changes", "type": "JSONB", "description": "Before/after values"},
+          {"name": "CreatedAt", "type": "TIMESTAMP NOT NULL DEFAULT NOW()"}
+        ]
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_tests_created_by ON Tests(CreatedByUserId)",
+      "CREATE INDEX idx_questions_test_id ON Questions(TestId)",
+      "CREATE INDEX idx_submissions_test_id ON StudentSubmissions(TestId)",
+      "CREATE INDEX idx_submissions_user_id ON StudentSubmissions(UserId)",
+      "CREATE INDEX idx_results_submission_id ON Results(SubmissionId)",
+      "CREATE INDEX idx_per_question_results_result_id ON PerQuestionResults(ResultId)",
+      "CREATE INDEX idx_ocr_jobs_user_id ON OcrJobs(UserId)",
+      "CREATE INDEX idx_audit_log_submission_id ON AuditLog(SubmissionId)"
+    ],
+    "extensions": [
+      "CREATE EXTENSION IF NOT EXISTS vector"
+    ]
+  },
+  "docker_compose_sketch": "version: '3.8'\n\nservices:\n  postgres:\n    image: postgres:15-alpine\n    environment:\n      POSTGRES_USER: testuser\n      POSTGRES_PASSWORD: testpass\n      POSTGRES_DB: papertest\n    ports:\n      - \"5432:5432\"\n    volumes:\n      - postgres_data:/var/lib/postgresql/data\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U testuser\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n\n  qdrant:\n    image: qdrant/qdrant:latest\n    ports:\n      - \"6333:6333\"\n    volumes:\n      - qdrant_data:/qdrant/storage\n    environment:\n      QDRANT_API_ENABLE_CONSOLE: \"true\"\n\n  embedding-service:\n    build:\n      context: ./embedding-service\n      dockerfile: Dockerfile\n    ports:\n      - \"5001:5001\"\n    environment:\n      FLASK_ENV: development\n    depends_on:\n      - qdrant\n\n  backend:\n    build:\n      context: ./backend\n      dockerfile: Dockerfile\n    ports:\n      - \"5000:5000\"\n    environment:\n      ASPNETCORE_ENVIRONMENT: Development\n      ConnectionStrings__DefaultConnection: \"Host=postgres;Port=5432;Database=papertest;Username=testuser;Password=testpass\"\n      Qdrant__Url: \"http://qdrant:6333\"\n      EmbeddingService__Url: \"http://embedding-service:5001\"\n      Jwt__Secret: \"your-secret-key-change-in-production\"\n    depends_on:\n      postgres:\n        condition: service_healthy\n      qdrant:\n        condition: service_started\n      embedding-service:\n        condition: service_started\n    volumes:\n      - ./backend:/app\n\n  frontend:\n    build:\n      context: ./frontend\n      dockerfile: Dockerfile.dev\n    ports:\n      - \"3000:3000\"\n    environment:\n      VITE_API_URL: \"http://localhost:5000/api\"\n    depends_on:\n      - backend\n    volumes:\n      - ./frontend:/app\n      - /app/node_modules\n\nvolumes:\n  postgres_data:\n  qdrant_data:",
+  "files_to_generate": [
+    {
+      "path": "backend/Program.cs",
+      "description": "ASP.NET Core host builder, middleware pipeline (auth, exception handling, CORS), DI registration (services, DbContext, JWT options)"
+    },
+    {
+      "path": "backend/PaperTestChecker.csproj",
+      "description": "NuGet package references: EntityFramework Core, Tesseract.NET, System.IdentityModel.Tokens.Jwt, FluentValidation, Npgsql.EntityFrameworkCore.PostgreSQL"
+    },
+    {
+      "path": "backend/Models/DbContext.cs",
+      "description": "PaperTestCheckerContext with DbSet<> properties, OnModelCreating fluent config (table names, relationships, constraints)"
+    },
+    {
+      "path": "backend/Models/User.cs",
+      "description": "User entity with Id, Email, Name, PasswordHash, Role, timestamps"
+    },
+    {
+      "path": "backend/Models/Test.cs",
+      "description": "Test entity with Id, Title, Description, CreatedByUserId, relationships to Questions, timestamps"
+    },
+    {
+      "path": "backend/Models/Question.cs",
+      "description": "Question entity with Id, TestId, Text, Type, Options (JSON), CorrectAnswer, Tags (JSON)"
+    },
+    {
+      "path": "backend/Models/StudentSubmission.cs",
+      "description": "StudentSubmission entity with Id, TestId, UserId, Source, timestamps, relationships to StudentAnswers, Result"
+    },
+    {
+      "path": "backend/Models/StudentAnswer.cs",
+      "description": "StudentAnswer entity with Id, SubmissionId, QuestionId, AnswerText, AnswerMetadata (JSON)"
+    },
+    {
+      "path": "backend/Models/Result.cs",
+      "description": "Result entity with Id, SubmissionId, TotalScore, relationship to PerQuestionResult, timestamps"
+    },
+    {
+      "path": "backend/Models/PerQuestionResult.cs",
+      "description": "PerQuestionResult entity with ResultId, QuestionId, IsCorrect, ScoreGiven, FeedbackText, ErrorTag, RecommendedResourceIds (JSON)"
+    },
+    {
+      "path": "backend/Models/Resource.cs",
+      "description": "Resource entity with Id, Title, Url, Body, Tags (JSON), relationship to Embedding"
+    },
+    {
+      "path": "backend/Models/Embedding.cs",
+      "description": "Embedding entity with Id, ResourceId, Vector (pgvector), Model, timestamp"
+    },
+    {
+      "path": "backend/Controllers/AuthController.cs",
+      "description": "Register, Login endpoints; password hashing, JWT token generation"
+    },
+    {
+      "path": "backend/Controllers/TestsController.cs",
+      "description": "CRUD endpoints for tests; role-based authorization for create/edit/delete"
+    },
+    {
+      "path": "backend/Controllers/OcrController.cs",
+      "description": "Upload (multipart file) and Parse (raw text -> structured answers) endpoints"
+    },
+    {
+      "path": "backend/Controllers/GradingController.cs",
+      "description": "Grade endpoint: accepts answers, calls GradingService, returns per-question results with recommendations"
+    },
+    {
+      "path": "backend/Controllers/SubmissionsController.cs",
+      "description": "Post submission, get result, regrade (teacher override)"
+    },
+    {
+      "path": "backend/Controllers/ResourcesController.cs",
+      "description": "Ingest, list resources; role-based access for ingest"
+    },
+    {
+      "path": "backend/Controllers/RecommendationsController.cs",
+      "description": "Query vector DB by error tag/context, return top 3 resources"
+    },
+    {
+      "path": "backend/Controllers/AnalyticsController.cs",
+      "description": "Compute and return test analytics (average score, distribution, per-question stats)"
+    },
+    {
+      "path": "backend/Services/AuthService.cs",
+      "description": "Register (hash password, create user), Login (verify hash, generate JWT), CurrentUser"
+    },
+    {
+      "path": "backend/Services/OcrService.cs",
+      "description": "Tesseract integration, image validation, OCR text extraction"
+    },
+    {
+      "path": "backend/Services/GradingService.cs",
+      "description": "Compare answers with key, assign scores, identify error tags, call RecommendationService"
+    },
+    {
+      "path": "backend/Services/EmbeddingService.cs",
+      "description": "HTTP client to embedding microservice, calls POST /embed, caches results"
+    },
+    {
+      "path": "backend/Services/QdrantService.cs",
+      "description": "HTTP client to Qdrant API, upsert vectors, search_points by similarity"
+    },
+    {
+      "path": "backend/Services/RecommendationService.cs",
+      "description": "Takes error tag or context, embeds, queries Qdrant, returns top 3 resources with snippets"
+    },
+    {
+      "path": "backend/Services/AnalyticsService.cs",
+      "description": "Query submissions for a test, compute averages, distributions, per-question accuracy"
+    },
+    {
+      "path": "backend/Middleware/JwtMiddleware.cs",
+      "description": "Extract JWT from Authorization header, validate, set HttpContext.User"
+    },
+    {
+      "path": "backend/Middleware/ExceptionHandlingMiddleware.cs",
+      "description": "Catch unhandled exceptions, log, return 500 with safe error message"
+    },
+    {
+      "path": "backend/Requests/RegisterRequest.cs",
+      "description": "DTO for POST /api/auth/register with email, password, name, role"
+    },
+    {
+      "path": "backend/Requests/LoginRequest.cs",
+      "description": "DTO for POST /api/auth/login with email, password"
+    },
+    {
+      "path": "backend/Responses/AuthResponse.cs",
+      "description": "DTO for auth endpoints: token, user (id, email, name, role)"
+    },
+    {
+      "path": "backend/Responses/GradingResponse.cs",
+      "description": "DTO for grading response: totalScore, perQuestionResults[], resourceRecommendations"
+    },
+    {
+      "path": "backend/Migrations/001_InitialCreate.cs",
+      "description": "Initial migration creating all tables (auto-generated by dotnet ef)"
+    },
+    {
+      "path": "backend/Tests/GradingServiceTests.cs",
+      "description": "Unit tests for GradingService: exact match, partial credit, error tag assignment"
+    },
+    {
+      "path": "backend/Tests/AuthServiceTests.cs",
+      "description": "Unit tests for AuthService: register, login, password validation, JWT parsing"
+    },
+    {
+      "path": "backend/Dockerfile",
+      "description": "Multi-stage: build (dotnet publish), runtime (mcr.microsoft.com/dotnet/aspnet:8.0), expose port 5000"
+    },
+    {
+      "path": "backend/.dockerignore",
+      "description": "Exclude bin/, obj/, .git, .gitignore, .vs, .vscode, *.user"
+    },
+    {
+      "path": "frontend/package.json",
+      "description": "Dependencies: react 18, vite, typescript, react-router-dom, axios, tailwind, shadcn/ui, vitest, playwright"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "description": "Vite config: react() plugin, server proxy to http://localhost:5000/api"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "description": "TypeScript strict mode, lib ES2020, JSX react-jsx"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "description": "React entry point, render App in #root"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "description": "Top-level component with Router, MainLayout/AdminLayout, route definitions"
+    },
+    {
+      "path": "frontend/src/api/client.ts",
+      "description": "Axios instance with interceptors: auto-attach JWT, handle 401 logout, base URL from env var"
+    },
+    {
+      "path": "frontend/src/api/auth.ts",
+      "description": "API functions: register(), login(), getCurrentUser()"
+    },
+    {
+      "path": "frontend/src/api/tests.ts",
+      "description": "API functions: getTests(), getTest(id), createTest(), updateTest(), deleteTest()"
+    },
+    {
+      "path": "frontend/src/api/ocr.ts",
+      "description": "API functions: uploadImage(file: File), parseOcr(rawText, testId)"
+    },
+    {
+      "path": "frontend/src/api/submissions.ts",
+      "description": "API functions: submitAnswers(), getSubmissionResult(), regrade()"
+    },
+    {
+      "path": "frontend/src/api/grading.ts",
+      "description": "API function: gradeSubmission(testId, answers)"
+    },
+    {
+      "path": "frontend/src/api/resources.ts",
+      "description": "API functions: ingestResources(), getResources(), getRecommendations()"
+    },
+    {
+      "path": "frontend/src/api/analytics.ts",
+      "description": "API function: getTestAnalytics(testId)"
+    },
+    {
+      "path": "frontend/src/types/index.ts",
+      "description": "TypeScript interfaces: User, Test, Question, StudentSubmission, Result, Resource, etc."
+    },
+    {
+      "path": "frontend/src/hooks/useAuth.ts",
+      "description": "Custom hook for auth state (login, logout, getCurrentUser, role checks)"
+    },
+    {
+      "path": "frontend/src/hooks/useApi.ts",
+      "description": "Generic hook for async API calls with loading, error, data states"
+    },
+    {
+      "path": "frontend/src/components/Header.tsx",
+      "description": "App header with navigation, user menu, logout button"
+    },
+    {
+      "path": "frontend/src/components/MainLayout.tsx",
+      "description": "Layout for public/student: Header, main content area, Footer"
+    },
+    {
+      "path": "frontend/src/components/AdminLayout.tsx",
+      "description": "Layout for admin/teacher: Sidebar with navigation, main content area"
+    },
+    {
+      "path": "frontend/src/components/QuestionCard.tsx",
+      "description": "Display question with input UI (textarea for short/long, radio/checkbox for MC)"
+    },
+    {
+      "path": "frontend/src/components/FeedbackCard.tsx",
+      "description": "Display per-question result: score, feedback, correct answer, error tag, resource links"
+    },
+    {
+      "path": "frontend/src/components/TestForm.tsx",
+      "description": "Form to create/edit test: title, dynamic question editor, answer key input"
+    },
+    {
+      "path": "frontend/src/components/OcrPreview.tsx",
+      "description": "Display OCR output, allow user to edit extracted text before submission"
+    },
+    {
+      "path": "frontend/src/components/ResourceLink.tsx",
+      "description": "Display single recommended resource: title, snippet, URL as link"
+    },
+    {
+      "path": "frontend/src/pages/LoginPage.tsx",
+      "description": "Login form, error handling, redirect to tests on success"
+    },
+    {
+      "path": "frontend/src/pages/RegisterPage.tsx",
+      "description": "Registration form: email, password, name, role dropdown; validation"
+    },
+    {
+      "path": "frontend/src/pages/TestListPage.tsx",
+      "description": "List of tests with filtering by role (student assigned, teacher created)"
+    },
+    {
+      "path": "frontend/src/pages/TestViewPage.tsx",
+      "description": "Main test-taking flow: image upload, OCR preview, answer editor, grade button, results display"
+    },
+    {
+      "path": "frontend/src/pages/ResultsPage.tsx",
+      "description": "Display grading results with per-question feedback and recommendations"
+    },
+    {
+      "path": "frontend/src/pages/AdminPanel.tsx",
+      "description": "Admin dashboard: resource management, test creation, user list"
+    },
+    {
+      "path": "frontend/src/pages/AnalyticsPage.tsx",
+      "description": "Test analytics: score histogram, per-question accuracy, average score (Recharts)"
+    },
+    {
+      "path": "frontend/src/utils/jwt.ts",
+      "description": "Utility: decode JWT, extract role and user ID"
+    },
+    {
+      "path": "frontend/src/utils/validators.ts",
+      "description": "Email regex, password strength check, test payload validation"
+    },
+    {
+      "path": "frontend/tests/unit/components/QuestionCard.test.tsx",
+      "description": "Unit tests for QuestionCard: render question, input handling, validation feedback"
+    },
+    {
+      "path": "frontend/tests/e2e/grade-flow.spec.ts",
+      "description": "E2E test (Playwright): login -> create test -> upload image -> grade -> verify results"
+    },
+    {
+      "path": "frontend/Dockerfile",
+      "description": "Build stage: npm install, npm build; runtime: nginx serving dist/ with SPA routing config"
+    },
+    {
+      "path": "frontend/Dockerfile.dev",
+      "description": "Dev Dockerfile: copy sources, install deps, run vite dev server on :3000"
+    },
+    {
+      "path": "frontend/.dockerignore",
+      "description": "Exclude node_modules, dist, .git, .gitignore, .env"
+    },
+    {
+      "path": "frontend/tailwind.config.js",
+      "description": "Tailwind config: content paths, extend theme if using shadcn/ui"
+    },
+    {
+      "path": "embedding-service/requirements.txt",
+      "description": "Flask, sentence-transformers, numpy, waitress"
+    },
+    {
+      "path": "embedding-service/app.py",
+      "description": "Flask app with POST /embed endpoint, loads sentence-transformers model, returns vectors"
+    },
+    {
+      "path": "embedding-service/Dockerfile",
+      "description": "Python 3.11 slim base, install requirements, expose port 5001, run waitress server"
+    },
+    {
+      "path": "docker-compose.yml",
+      "description": "Orchestrates postgres, qdrant, embedding-service, backend, frontend with health checks and volume mounts"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "description": "GitHub Actions: on push, run dotnet build/test, npm build/test, optionally run E2E on deployed backend"
+    },
+    {
+      "path": "README.md",
+      "description": "Project overview, quick start, local dev (docker-compose up), embedding model options, architecture diagram"
+    },
+    {
+      "path": ".gitignore",
+      "description": "Ignore bin/, obj/, node_modules/, dist/, .env, .vscode/, *.user, appsettings.*.json (local)"
+    },
+    {
+      "path": "appsettings.json",
+      "description": "Production settings placeholder: DB connection, Qdrant URL, JWT secret, embedding service URL"
+    },
+    {
+      "path": "appsettings.Development.json",
+      "description": "Dev settings: local postgres, local qdrant, local embedding service, debug logging"
+    }
+  ],
+  "constraints_and_notes": [
+    "SECURITY: JWT secret must be rotated in production; store in environment variable or secrets manager, never commit to repo.",
+    "SECURITY: Password hashing uses bcrypt (via a .NET library); never log or expose password hashes.",
+    "SECURITY: Implement rate limiting on auth endpoints (/register, /login) to prevent brute force attacks.",
+    "SECURITY: All file uploads to OCR must be validated for file type and size (max 8MB); scan for malware if possible.",
+    "PRIVACY: Student submissions and test data must remain encrypted at rest in production; use DB encryption or column-level encryption.",
+    "PRIVACY: OCR images may contain sensitive handwriting; do not persist images indefinitely; implement retention policy (e.g., delete after 30 days).",
+    "DEV: Local dev requires Docker; ensure docker daemon is running and docker-compose v2.20+ installed.",
+    "DEV: Postgres default creds in docker-compose are for dev only; change in production to strong random values.",
+    "DEV: Qdrant runs in memory by default in docker-compose; add persistent volume for data durability.",
+    "DEV: Embedding service uses sentence-transformers all-MiniLM-L6-v2 model (~80MB); first run downloads model; CPU inference ~100-200ms per document.",
+    "EMBEDDING: For production, consider Hugging Face Inference API free tier (no GPU) or self-host with GPU accelerator (NVIDIA CUDA).",
+    "EMBEDDING: Vector dimension is fixed at 384 (for all-MiniLM-L6-v2); if changing embedding model, must re-embed all resources.",
+    "GRADING: MVP supports exact-match grading for MC and simple substring matching for short answers; LLM-assisted feedback can be added in future sprints.",
+    "GRADING: Partial credit for MC questions is unsupported in MVP; can be extended per question config.",
+    "RECOMMENDATIONS: If no vector DB results, fallback to keyword matching on resource tags; implement tag-based filtering.",
+    "QDRANT: Default config allows up to 50 concurrent connections; scale collection shards if >10k resources.",
+    "FRONTEND: SPA routing assumes backend serves index.html for any unknown routes (nginx.conf provided).",
+    "FRONTEND: JWT token stored in localStorage (acceptable for MVP); consider secure httpOnly cookie + CSRF token for production.",
+    "FRONTEND: Vite dev server proxies /api to backend; production build expects backend at same origin or CORS enabled.",
+    "TESTING: Unit tests for services; integration tests via E2E tests in Playwright; no unit tests for controllers (covered by E2E).",
+    "CI/CD: GitHub Actions runner cost is free for public repos; private repos have limited minutes; consider self-hosted runners for heavy pipelines.",
+    "ASYNC: All async operations in backend use async/await; ensure no blocking calls in middleware.",
+    "ERROR HANDLING: All endpoints return consistent error schema {code, message, details}; clients must handle 401/403 for auth failures.",
+    "ASSUMPTIONS: Single test-level scoring (uniform points per question) in MVP; multi-question difficulty weighting deferred to future.",
+    "ASSUMPTIONS: Admin role has full access; Teacher role limited to tests they created; Student role is read-only for tests and can only submit answers.",
+    "ASSUMPTIONS: OCR assumes single-page test submissions; multi-page papers require separate uploads.",
+    "ASSUMPTIONS: EmbeddingService is optional in dev; if not running, RecommendationService falls back to keyword match on resource tags."
+  ]
+}

@@ -39,6 +39,7 @@ ScaffoldingReadMe.txt
 # Others
 ~$*
 *~
+.vs/
 CodeCoverage/
 
 # MSBuild Binary and Structured Log
@@ -52,3 +53,18 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Secrets (local only)
+appsettings.Development.json
+
+# Node / Frontend
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo

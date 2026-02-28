@@ -1,0 +1,440 @@
+﻿{
+  "project": "Test Checking Assistant",
+  "summary": "System that checks paper tests (from photos or typed answers), grades them, gives per-question feedback, and recommends reading materials using embeddings and a vector DB.",
+  "epics": [
+    {
+      "epic_id": "E1",
+      "title": "User & Auth",
+      "stories": [
+        {
+          "id": "US-101",
+          "title": "User registration & login (basic)",
+          "description": "Allow Admin, Teacher, and Student accounts to register and log in. Use JWT for API auth.",
+          "acceptance_criteria": [
+            "Given an unauthenticated user, when they POST valid credentials to /api/auth/login, then return a JWT and user role.",
+            "Given a new user request to /api/auth/register with unique email, when valid data is provided, then create user and return 201.",
+            "Given invalid credentials, when login attempted, then return 401 with an error message."
+          ],
+          "priority": "high",
+          "estimate": "S",
+          "ui_pages_components": [ "Login Page", "Register Page", "Account/Profile Page" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/auth/register",
+              "verb": "POST"
+            },
+            {
+              "path": "/api/auth/login",
+              "verb": "POST"
+            },
+            {
+              "path": "/api/auth/me",
+              "verb": "GET"
+            }
+          ],
+          "data_models": [ "User {id, name, email, role, passwordHash, createdAt}" ]
+        },
+        {
+          "id": "US-102",
+          "title": "Role-based access (Admin / Teacher / Student)",
+          "description": "Limit access to admin pages and teacher-only features.",
+          "acceptance_criteria": [
+            "Given a Teacher JWT, when accessing /api/admin/*, then return 403.",
+            "Given an Admin JWT, when accessing teacher endpoints, then allow.",
+            "Given an unauthenticated request to protected endpoints, then return 401."
+          ],
+          "priority": "high",
+          "estimate": "S",
+          "ui_pages_components": [ "Admin Layout/Sidebar", "Teacher Dashboard (restricted)" ],
+          "backend_endpoints": [],
+          "data_models": []
+        }
+      ]
+    },
+    {
+      "epic_id": "E2",
+      "title": "Test Management",
+      "stories": [
+        {
+          "id": "US-201",
+          "title": "Create test with answer key (Teacher/Admin)",
+          "description": "Allow Teachers/Admins to create tests composed of questions and an answer key.",
+          "acceptance_criteria": [
+            "Given teacher is authenticated, when POST /api/tests with test payload (title, metadata, questions) then create test and return 201 with test id.",
+            "Given invalid question data (missing text or type), then return 400 with validation errors.",
+            "When retrieving GET /api/tests/{id}, then response includes questions and answer key metadata (answer format must be excluded for student view unless authorized)."
+          ],
+          "priority": "high",
+          "estimate": "M",
+          "ui_pages_components": [ "Create Test Page", "Question Editor Component" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/tests",
+              "verb": "POST"
+            },
+            {
+              "path": "/api/tests/{id}",
+              "verb": "GET"
+            },
+            {
+              "path": "/api/tests/{id}",
+              "verb": "PUT"
+            },
+            {
+              "path": "/api/tests",
+              "verb": "GET"
+            }
+          ],
+          "data_models": [
+            "Test {id, title, createdBy, createdAt, metadata}",
+            "Question {id, testId, text, type, options[], correctAnswer, tags[]}"
+          ]
+        },
+        {
+          "id": "US-202",
+          "title": "Edit/Delete tests (Admin/Teacher)",
+          "description": "Allow editing of test content and deletion of tests.",
+          "acceptance_criteria": [
+            "Given teacher owns the test, when PUT /api/tests/{id} with valid changes, then update and return 200.",
+            "Given admin request to DELETE /api/tests/{id}, when test exists, then delete and return 204.",
+            "Given malformed request, return 400."
+          ],
+          "priority": "medium",
+          "estimate": "M",
+          "ui_pages_components": [ "Test Editor", "Test Management (Admin)" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/tests/{id}",
+              "verb": "PUT"
+            },
+            {
+              "path": "/api/tests/{id}",
+              "verb": "DELETE"
+            }
+          ],
+          "data_models": []
+        }
+      ]
+    },
+    {
+      "epic_id": "E3",
+      "title": "Student Submission & OCR",
+      "stories": [
+        {
+          "id": "US-301",
+          "title": "Upload photo of student's paper (OCR pipeline)",
+          "description": "Allow Students/Teachers to upload photos (jpg/png) of a filled test; run OCR and produce parsed answers.",
+          "acceptance_criteria": [
+            "Given a photo uploaded to POST /api/ocr/upload, when image is valid, then return parsed text (raw OCR) and a structured candidate answer set.",
+            "Given unreadable image, return 422 with helpful message and an option to provide typed answers.",
+            "OCR pipeline must sanitize input and limit file size to 8MB for MVP."
+          ],
+          "priority": "high",
+          "estimate": "M",
+          "ui_pages_components": [ "Test Upload UI (image upload + preview)", "OCR Result Editor (allow manual corrections)" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/ocr/upload",
+              "verb": "POST"
+            },
+            {
+              "path": "/api/ocr/parse",
+              "verb": "POST"
+            }
+          ],
+          "data_models": [
+            "OcrJob {id, userId, status, rawText, structuredAnswers, createdAt}"
+          ]
+        },
+        {
+          "id": "US-302",
+          "title": "Allow typed answers if OCR fails or user prefers typing",
+          "description": "Provide an editor on the TestView page where student answers can be typed/edited before grading.",
+          "acceptance_criteria": [
+            "Given student on TestView, when editing answers and clicking Grade, then submission flows to grading endpoint.",
+            "Given user previously uploaded OCR, when editing that content, then edited answers are used."
+          ],
+          "priority": "high",
+          "estimate": "S",
+          "ui_pages_components": [ "Answers Editor (textarea or per-question inputs)" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/submissions",
+              "verb": "POST"
+            }
+          ],
+          "data_models": [
+            "StudentSubmission {id, testId, userId, answers[], createdAt, source: 'ocr'|'typed'}",
+            "StudentAnswer {id, submissionId, questionId, answerText, answerMeta}"
+          ]
+        }
+      ]
+    },
+    {
+      "epic_id": "E4",
+      "title": "Grading & Feedback",
+      "stories": [
+        {
+          "id": "US-401",
+          "title": "Grade student answers and generate per-question feedback",
+          "description": "Grade submissions against answer key, support partial credit for short/structured answers, and return actionable feedback explaining mistakes.",
+          "acceptance_criteria": [
+            "Given a submission, when POST /api/tests/{id}/grade is called with answers, then respond within ~3s (dev) with: total_score, per_question results (question_id, correct, score, feedback, tags).",
+            "Feedback must include: correct answer explanation, error category tag (one of a defined set or free text), and 1–3 recommended resource ids.",
+            "Edge cases: handle missing answers (score 0) and malformed payloads (400)."
+          ],
+          "priority": "high",
+          "estimate": "L",
+          "ui_pages_components": [ "Results Page / Modal", "PerQuestion FeedbackCard" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/tests/{id}/grade",
+              "verb": "POST"
+            },
+            {
+              "path": "/api/submissions/{id}/result",
+              "verb": "GET"
+            }
+          ],
+          "data_models": [
+            "Result {id, submissionId, totalScore, perQuestion[]}",
+            "PerQuestionResult {questionId, correct, score, feedback, resourceIds[]}"
+          ]
+        },
+        {
+          "id": "US-402",
+          "title": "Provide teacher override and manual re-grade",
+          "description": "Allow a teacher to edit feedback and re-grade any submission.",
+          "acceptance_criteria": [
+            "Given teacher role, when PUT /api/submissions/{id}/regrade with manual adjustments, then update stored result.",
+            "Changes must be audited (who changed, timestamp)."
+          ],
+          "priority": "medium",
+          "estimate": "M",
+          "ui_pages_components": [ "Submission Admin Panel", "Manual Override Form" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/submissions/{id}/regrade",
+              "verb": "PUT"
+            }
+          ],
+          "data_models": [
+            "Audit {id, submissionId, userId, changes, createdAt}"
+          ]
+        }
+      ]
+    },
+    {
+      "epic_id": "E5",
+      "title": "Recommendations & Embeddings",
+      "stories": [
+        {
+          "id": "US-501",
+          "title": "Document ingestion and embedding for recommended readings",
+          "description": "Admin can ingest reading materials (title, body, url) to be embedded and stored in the vector DB (Qdrant).",
+          "acceptance_criteria": [
+            "Given an admin uploads a resources.json or uses UI, when ingestion runs, then embeddings for each resource are computed and stored in vector DB with metadata.",
+            "Document ingestion endpoint returns ingestion status and number of items indexed.",
+            "Embedding service must use a free/open embedding model or a free-tier inference endpoint and document how to run it locally or via a free cloud provider."
+          ],
+          "priority": "high",
+          "estimate": "M",
+          "ui_pages_components": [ "Admin Resource Upload", "Resource List/Editor" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/resources/ingest",
+              "verb": "POST"
+            },
+            {
+              "path": "/api/resources",
+              "verb": "GET"
+            }
+          ],
+          "data_models": [
+            "Resource {id, title, url, body, tags[], createdAt}",
+            "Embedding {resourceId, vector[], model, createdAt}"
+          ]
+        },
+        {
+          "id": "US-502",
+          "title": "RecommendationService: query vector DB for top resources",
+          "description": "When grading finds mistake tags or constructs an embedding of the error, query Qdrant for best matches and return up to 3 resources.",
+          "acceptance_criteria": [
+            "Given a per-question error (tag or short text), when recommendations requested, then return up to 3 resources with id, title, url, and snippet.",
+            "Results ranked by similarity; if no vector DB result, fallback to simple keyword match."
+          ],
+          "priority": "high",
+          "estimate": "M",
+          "ui_pages_components": [ "PerQuestion Recommendation Links", "Resources Modal" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/recommendations",
+              "verb": "POST"
+            }
+          ],
+          "data_models": []
+        }
+      ]
+    },
+    {
+      "epic_id": "E6",
+      "title": "Frontend UX & Layouts",
+      "stories": [
+        {
+          "id": "US-601",
+          "title": "Multiple layouts and routing",
+          "description": "Provide MainLayout (public & student) and AdminLayout (admin/teacher) with routing for pages: /, /tests, /tests/:id, /admin, /login.",
+          "acceptance_criteria": [
+            "Given logged-in Admin, when visiting /admin, the AdminLayout shows sidebar and admin pages.",
+            "Given Student, when visiting /tests list, MainLayout header and nav show appropriate links.",
+            "Routing must be client-side (React Router v6) and pages should lazy-load."
+          ],
+          "priority": "high",
+          "estimate": "S",
+          "ui_pages_components": [ "MainLayout", "AdminLayout", "Header", "Footer", "Sidebar" ],
+          "backend_endpoints": [],
+          "data_models": []
+        },
+        {
+          "id": "US-602",
+          "title": "Test View: upload, OCR preview, grade and view results",
+          "description": "TestView should combine upload, OCR result editor, typed answers, and Grade button; display result inline.",
+          "acceptance_criteria": [
+            "Given a test, when user uploads a photo and corrects OCR, clicking Grade triggers grade endpoint and displays results.",
+            "UI must show per-question feedback and resources as links."
+          ],
+          "priority": "high",
+          "estimate": "M",
+          "ui_pages_components": [ "TestView", "OCRPreview", "QuestionCard", "FeedbackCard" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/ocr/upload",
+              "verb": "POST"
+            },
+            {
+              "path": "/api/tests/{id}/grade",
+              "verb": "POST"
+            }
+          ],
+          "data_models": []
+        }
+      ]
+    },
+    {
+      "epic_id": "E7",
+      "title": "Analytics & Reports",
+      "stories": [
+        {
+          "id": "US-701",
+          "title": "Basic score analytics (Teacher/Admin)",
+          "description": "Show score distribution and average per-test.",
+          "acceptance_criteria": [
+            "Given a test with >=1 submissions, when teacher visits /tests/{id}/analytics, then show average score, score histogram (bins), and list of questions with percent correct.",
+            "API endpoint returns required metrics within acceptable time for <=500 submissions."
+          ],
+          "priority": "medium",
+          "estimate": "M",
+          "ui_pages_components": [ "Analytics Page", "Charts Component (use lightweight chart lib)" ],
+          "backend_endpoints": [
+            {
+              "path": "/api/tests/{id}/analytics",
+              "verb": "GET"
+            }
+          ],
+          "data_models": []
+        }
+      ]
+    },
+    {
+      "epic_id": "E8",
+      "title": "CI/DevOps & Local Dev",
+      "stories": [
+        {
+          "id": "US-801",
+          "title": "Local dev setup + docker compose",
+          "description": "Provide docker-compose to run backend, frontend (dev), and Qdrant. Provide README with run steps.",
+          "acceptance_criteria": [
+            "Given developer runs docker-compose up, when services start, then backend listens on :5000, frontend on :3000, qdrant on :6333.",
+            "Readme contains steps to run embedding service locally or use a free Hugging Face inference endpoint with an API key."
+          ],
+          "priority": "high",
+          "estimate": "S",
+          "ui_pages_components": [],
+          "backend_endpoints": [],
+          "data_models": []
+        },
+        {
+          "id": "US-802",
+          "title": "CI workflow for build & tests",
+          "description": "Create GitHub Actions workflow to build backend, run unit tests, and run frontend build/tests.",
+          "acceptance_criteria": [
+            "On push, CI runs dotnet restore/build/test and npm install/build/test and fails the pipeline on test failure."
+          ],
+          "priority": "medium",
+          "estimate": "S",
+          "ui_pages_components": [],
+          "backend_endpoints": [],
+          "data_models": []
+        }
+      ]
+    }
+  ],
+  "milestones_and_sprints": {
+    "duration": "2 weeks (3 sprints)",
+    "sprint_1": {
+      "focus": "Project skeleton, auth, test creation, simple frontend skeleton, OCR MVP (file upload -> Tesseract), static recommendations fallback",
+      "deliverables": [
+        "Backend skeleton, Auth endpoints (register/login)",
+        "Create Test endpoint + simple DB models",
+        "Frontend skeleton (MainLayout, routing, Tests list and Test view stub)",
+        "OCR upload endpoint that returns raw OCR text (Tesseract integration)",
+        "Docker-compose skeleton"
+      ]
+    },
+    "sprint_2": {
+      "focus": "Grading service, embeddings ingestion, vector DB (Qdrant) local, RecommendationService MVP using embeddings",
+      "deliverables": [
+        "Test grading endpoint (exact-match and simple partial credit)",
+        "Recommendation ingestion endpoint (resources.json -> embeddings -> Qdrant)",
+        "Front-end TestView wired to grade endpoint and display recommendations",
+        "Basic unit tests for grading and recommendation"
+      ]
+    },
+    "sprint_3": {
+      "focus": "Polish UX, Admin pages, analytics, CI, E2E tests",
+      "deliverables": [
+        "Admin resource management UI",
+        "Analytics endpoint and frontend view",
+        "Playwright E2E tests for grade flow",
+        "CI workflow and README"
+      ]
+    }
+  },
+  "definition_of_done": [
+    "App runs locally with docker-compose (backend, frontend dev server, qdrant)",
+    "User can create a test, upload photo (OCR) or type answers, grade, and see per-question feedback and up to 3 reading recommendations",
+    "Embeddings ingestion and vector DB query work end-to-end for recommendations",
+    "At least 5 backend unit tests and 2 frontend E2E tests pass",
+    "Auth with JWT and role-based access implemented for Admin/Teacher/Student",
+    "Codebase scaffolded and documented; README explains local dev, embedding model options, and how to replace LLM endpoints"
+  ],
+  "data_model_summary": {
+    "User": "{ id (uuid), name, email, passwordHash, role ('admin'|'teacher'|'student'), createdAt }",
+    "Test": "{ id, title, description, createdByUserId, createdAt }",
+    "Question": "{ id, testId, index, text, type ('mc'|'short'|'long'), options[], correctAnswer, tags[] }",
+    "StudentSubmission": "{ id, testId, userId, source, answers[], createdAt }",
+    "StudentAnswer": "{ id, submissionId, questionId, answerText, metadata }",
+    "Result": "{ id, submissionId, totalScore, perQuestionResults[] }",
+    "PerQuestionResult": "{ questionId, correct (bool), scoreGiven, feedbackText, errorTag, recommendedResourceIds[] }",
+    "Resource": "{ id, title, url, body, tags[] }",
+    "Embedding": "{ id, resourceId, vector (float[]), model, createdAt }",
+    "OcrJob": "{ id, userId, imageUrl, rawText, structuredAnswers, status }"
+  },
+  "notes_and_risks": [
+    "OCR quality depends on image quality and layout of the paper; allow manual correction step before grading.",
+    "Embedding model selection important: recommend small open models for local use (e.g., sentence-transformers on TGI) or Hugging Face inference free tier for prototyping.",
+    "Privacy: student data should remain local or in your controlled environment; avoid sending images to third-party hosted APIs unless approved.",
+    "Performance: for production, vector DB and model hosting need compute (GPU recommended for large models); for MVP, small models and local TGI with CPU may be acceptable but slower."
+  ],
+  "question_for_architect": "Confirm whether we should support multi-page tests with different scoring rules per question in the first release or keep single test-level uniform scoring for MVP."
+}
