@@ -17,4 +17,5 @@ public record GeminiQuestionResult(
     string CorrectAnswer,
     bool IsCorrect,
     string Feedback,
-    string[] RecommendedReadings);
+    string[] RecommendedReadings,
+    string[] Options);

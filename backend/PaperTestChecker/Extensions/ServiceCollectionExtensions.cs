@@ -141,6 +141,9 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ISubmissionService, SubmissionService>();
+        services.AddScoped<ITeacherService, TeacherService>();
+        services.AddScoped<IStudentTestService, StudentTestService>();
+        services.AddScoped<IAdminService, AdminService>();
         return services;
     }
 }

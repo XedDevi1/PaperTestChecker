@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PaperTestChecker.Data;
@@ -11,9 +12,11 @@ using PaperTestChecker.Data;
 namespace PaperTestChecker.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260228224203_AddTeacherFeature")]
+    partial class AddTeacherFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,66 +166,6 @@ namespace PaperTestChecker.Migrations
                     b.ToTable("Submissions");
                 });
 
-            modelBuilder.Entity("PaperTestChecker.Models.TestAttempt", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("GeneratedTestId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("MaxScore")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("StudentUserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GeneratedTestId");
-
-                    b.HasIndex("StudentUserId");
-
-                    b.ToTable("TestAttempts");
-                });
-
-            modelBuilder.Entity("PaperTestChecker.Models.TestAttemptAnswer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CorrectAnswer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsCorrect")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("QuestionNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SelectedAnswer")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TestAttemptId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TestAttemptId");
-
-                    b.ToTable("TestAttemptAnswers");
-                });
-
             modelBuilder.Entity("PaperTestChecker.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -305,36 +248,6 @@ namespace PaperTestChecker.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PaperTestChecker.Models.TestAttempt", b =>
-                {
-                    b.HasOne("PaperTestChecker.Models.GeneratedTest", "GeneratedTest")
-                        .WithMany()
-                        .HasForeignKey("GeneratedTestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PaperTestChecker.Models.User", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("GeneratedTest");
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("PaperTestChecker.Models.TestAttemptAnswer", b =>
-                {
-                    b.HasOne("PaperTestChecker.Models.TestAttempt", "TestAttempt")
-                        .WithMany("Answers")
-                        .HasForeignKey("TestAttemptId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TestAttempt");
-                });
-
             modelBuilder.Entity("PaperTestChecker.Models.GeneratedTest", b =>
                 {
                     b.Navigation("Items");
@@ -343,11 +256,6 @@ namespace PaperTestChecker.Migrations
             modelBuilder.Entity("PaperTestChecker.Models.Submission", b =>
                 {
                     b.Navigation("QuestionResults");
-                });
-
-            modelBuilder.Entity("PaperTestChecker.Models.TestAttempt", b =>
-                {
-                    b.Navigation("Answers");
                 });
 #pragma warning restore 612, 618
         }

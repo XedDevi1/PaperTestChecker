@@ -11,6 +11,7 @@ public class QuestionResult
     public bool IsCorrect { get; set; }
     public string Feedback { get; set; } = string.Empty;
     public string[] RecommendedReadings { get; set; } = [];
+    public string[] Options { get; set; } = [];
 
     public Submission Submission { get; set; } = null!;
 }

@@ -44,7 +44,8 @@ public class SubmissionService : ISubmissionService
                 CorrectAnswer = q.CorrectAnswer,
                 IsCorrect = q.IsCorrect,
                 Feedback = q.Feedback,
-                RecommendedReadings = q.RecommendedReadings
+                RecommendedReadings = q.RecommendedReadings,
+                Options = q.Options ?? []
             }).ToList()
         };
 

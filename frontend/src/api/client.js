@@ -49,6 +49,17 @@ export async function postFile(url, file) {
     });
 }
 
+export async function del(url) {
+    return request(url, { method: 'DELETE' });
+}
+
+export async function put(url, body) {
+    return request(url, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+    });
+}
+
 export async function login(email, password) {
     const res = await post('/auth/login', { email, password });
     if (!res.ok) return { error: 'Invalid credentials' };

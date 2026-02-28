@@ -31,6 +31,7 @@ public class GeminiService : IGeminiService
         4. Grade each question (correct or incorrect)
         5. Provide brief, helpful feedback for incorrect answers explaining why the correct answer is right
         6. For incorrect answers, suggest 1-3 specific reading materials or topics the student should study to improve
+        7. For each question, generate exactly 4 answer options (including the correct answer and 3 plausible distractors)
 
         Respond ONLY with valid JSON in exactly this format (no markdown, no code fences):
         {
@@ -42,7 +43,8 @@ public class GeminiService : IGeminiService
               "correctAnswer": "The correct answer",
               "isCorrect": true,
               "feedback": "Brief explanation (empty string if correct)",
-              "recommendedReadings": ["Topic or book to study"]
+              "recommendedReadings": ["Topic or book to study"],
+              "options": ["Option A", "Option B", "Option C", "Option D"]
             }
           ],
           "totalScore": 3,
@@ -55,6 +57,8 @@ public class GeminiService : IGeminiService
         - feedback should be empty string "" for correct answers
         - totalScore is the count of correct answers
         - maxScore is the total number of questions
+        - options must always contain exactly 4 items, one of which is the correctAnswer
+        - options distractors should be plausible but clearly wrong
         """;
 
     public GeminiService(HttpClient http, IOptions<AiSettings> options, ILogger<GeminiService> logger)
