@@ -1,4 +1,5 @@
-const API_BASE = '/api';
+// Use the environment variable if defined, otherwise default to local development proxy
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 function getToken() {
     return localStorage.getItem('token');
