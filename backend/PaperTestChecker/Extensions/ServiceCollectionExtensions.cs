@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
                 if (allowedOrigins.Length > 0)
                 {
                     policy.WithOrigins(allowedOrigins)
+                          .SetIsOriginAllowedToAllowWildcardSubdomains()
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
