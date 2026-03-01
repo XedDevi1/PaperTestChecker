@@ -21,7 +21,14 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<PaperTestChecker.Data.AppDbContext>();
-        context.Database.Migrate();
+        if (context.Database.IsRelational())
+        {
+            context.Database.Migrate();
+        }
+        else
+        {
+            context.Database.EnsureCreated();
+        }
     }
     catch (Exception ex)
     {
@@ -32,11 +39,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseDefaultPipeline();
 
-app.MapGet("/healthz", () => Results.Json(new { status = "ok" }))
-   .WithName("Health");
-
-app.MapGet("/api/ping", () => Results.Json(new { pong = true }))
-   .RequireAuthorization()
-   .WithName("Ping");
-
 app.Run();
+
+// Required for WebApplicationFactory in integration tests
+public partial class Program { }

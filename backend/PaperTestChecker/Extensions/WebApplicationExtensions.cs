@@ -11,7 +11,11 @@ public static class WebApplicationExtensions
             app.UseSwaggerUI();
         }
 
-        app.UseHttpsRedirection();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
+
         app.UseCors("FrontendDev");
         app.UseAuthentication();
         app.UseAuthorization();
