@@ -1,6 +1,6 @@
 # PaperTestChecker (Test Checking Assistant)
 
-🌍 **[Try the Live Web App Here!](https://paper-test-checker.vercel.app)**
+🌍 **[Try the Live Web App Here!](https://paper-test-checker.vercel.app)** (blocked on the working laptop😞) BUT you can use on your own device (PC/Laptop/Phone)😀
 
 ## Overview
 **Test Checking Assistant** is a web-based system designed to evaluate paper tests, provide detailed feedback based on student mistakes, and automatically generate a curated list of reading materials and resources for improvement. 
