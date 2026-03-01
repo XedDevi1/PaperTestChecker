@@ -27,6 +27,7 @@ We will deploy the .NET API using the `Dockerfile` we prepared.
 5. Provide the following settings:
    - **Language**: `Docker`
    - **Branch**: `main` (or your default branch)
+   - **Root Directory**: `backend/PaperTestChecker` (⚠️ IMPORTANT: if you don't set this, the build will fail saying `PaperTestChecker.csproj` not found)
    - **Region**: Choose the one closest to your Neon database
    - **Instance Type**: Free
 6. Scroll down to **Environment Variables** and add the following:
