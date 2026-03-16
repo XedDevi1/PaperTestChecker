@@ -182,6 +182,41 @@ For detailed instructions on how to set up environment variables for production 
 
 ---
 
+## 🤖 GitHub Copilot Instructions
+
+This repository includes structured [GitHub Copilot customization files](https://docs.github.com/en/copilot/reference/customization-cheat-sheet) that automatically guide Copilot to generate code consistent with this project's architecture, tech stack, and conventions.
+
+### How It Works
+
+| File | Scope | Purpose |
+|---|---|---|
+| [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) | Always active — every chat conversation | Project overview, full tech stack, monorepo structure, and critical cross-cutting rules |
+| [`.github/instructions/backend.instructions.md`](./.github/instructions/backend.instructions.md) | Auto-applied to `backend/**/*.cs` | ASP.NET Core 8 conventions: thin controllers, service layer, DTOs, EF Core, auth & async rules |
+| [`.github/instructions/frontend.instructions.md`](./.github/instructions/frontend.instructions.md) | Auto-applied to `frontend/src/**/*.{jsx,js}` | React/Vite conventions: environment variables, `src/api/` layer, Context API, CSS Modules |
+
+### What the Instructions Enforce
+
+**Across the whole project (`copilot-instructions.md`):**
+- Never hardcode secrets — use `appsettings.Development.json` locally, env vars in production.
+- Always use `async`/`await` end-to-end; no blocking `.Result` or `.Wait()` calls.
+- All protected endpoints must declare `[Authorize(Roles = "...")]` explicitly.
+- Follow the existing file and folder structure before creating new files.
+
+**Backend (`backend.instructions.md`):**
+- Controllers stay thin — business logic goes into `Services/`.
+- DTOs are separate classes in `DTOs/` with naming convention `XxxRequestDto` / `XxxResponseDto`.
+- EF Core: `Guid` PKs, snake_case table names, JSONB for list/dict columns.
+
+**Frontend (`frontend.instructions.md`):**
+- Read the API base URL from `import.meta.env.VITE_API_URL` — never hardcode `localhost`.
+- All HTTP calls go through the `src/api/` wrappers — no raw `fetch()` in components.
+- Auth state comes from `src/context/` — do not introduce external state libraries.
+- Style with `src/index.css` utilities and CSS Modules — no inline styles.
+
+> **Requires:** VS Code with the GitHub Copilot extension **v1.290 or later** for scoped instruction file support.
+
+---
+
 ## Insights and Recommendations for Copilot & AI Development
 
 If you plan to use this dual-AI (Planner + Executor) approach in the future, keep these insights in mind:
